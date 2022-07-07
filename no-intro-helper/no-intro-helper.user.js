@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GGN No-Intro Helper
 // @namespace    https://gazellegames.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Script that assists with No-Intro Uploads (https://gazellegames.net/forums.php?action=viewthread&threadid=26939)
 // @author       brownbear49
 // @match        https://gazellegames.net/upload.php*
@@ -37,7 +37,6 @@ const REGIONS = {
     "uk, australia": "UK, Australia",
     world: "World",
     "region-free": "Region-Free",
-    other: "other",
 };
 
 // language mapping
@@ -51,9 +50,44 @@ const LANGUAGES = {
     ja: "Japanese",
     ko: "Korean",
     pl: "Polish",
-    pt: "Portugese",
+    pt: "Portuguese",
     ru: "Russian",
     es: "Spanish",
+    nl: "Other",
+    sv: "Other",
+    no: "Other",
+    da: "Other",
+    fi: "Other",
+};
+
+// region to language mapping
+const REGIONTOLANGUAGE = {
+    USA: "English",
+    Europe: "English",
+    Japan: "Japanese",
+    Asia: "default",
+    Australia: "English",
+    France: "French",
+    Germany: "German",
+    Spain: "Spanish",
+    Italy: "Italian",
+    UK: "English",
+    Netherlands: "Other",
+    Sweden: "Other",
+    Russia: "Russian",
+    China: "Chinese",
+    Korea: "Korean",
+    "Hong Kong": "default",
+    Taiwan: "default",
+    Brazil: "Portuguese",
+    Canada: "default",
+    "Japan, USA": "default",
+    "Japan, Europe": "default",
+    "USA, Europe": "English",
+    "Europe, Australia": "English",
+    "Japan, Asia": "default",
+    "UK, Australia": "English",
+    World: "English",
 };
 
 // Returns region if found else null
@@ -65,17 +99,17 @@ function getRegion(str) {
 
 // Returns language if found else null
 function getLanguages(str) {
-    const lower = str.toLowerCase();
+    const lower = str.toLowerCase().trim();
     if (LANGUAGES[lower] != null) {
         return LANGUAGES[lower];
     }
     const split = lower.split(",");
+    let number = 0;
     for (const e of split) {
-        // if any of the strings are not languages we return null
-        // potential bug - "Other"
-        if (!LANGUAGES[e]) return null;
+        if (LANGUAGES[e.trim()] != null) number++;
     }
-    return "Multi-Language";
+    if (number > 0) return "Multi-Language";
+    else return null;
 }
 
 // returns [title, region, language]
@@ -109,6 +143,10 @@ function extractInfo(str) {
             }
         }
     }
+    // If language is not found but region is, update language with mapped value
+    if (!foundLanguage && foundRegion) {
+        answer[2] = REGIONTOLANGUAGE[answer[1]];
+    }
     // Remove language and region info from provided string (Regex expression removes duplicate spaces)
     answer[0] = toRemove
         .reduce((prev, curr) => prev.replace(curr, ""), str)
@@ -118,9 +156,9 @@ function extractInfo(str) {
 }
 
 function setLanguage(language) {
-    if (language === "") {
-        console.log("Language not found, setting to English");
-        document.getElementById("language").value = "English";
+    if (language === "" || language === "default") {
+        console.log("Language not found, please update manually");
+        document.getElementById("language").value = "";
     } else {
         console.log(`language set to ${language}`);
         document.getElementById("language").value = language;
@@ -130,6 +168,7 @@ function setLanguage(language) {
 function setRegion(region) {
     if (region === "") {
         console.log("Region not found");
+        document.getElementById("region").value = "";
     } else {
         console.log(`region set to ${region}`);
         document.getElementById("region").value = region;
